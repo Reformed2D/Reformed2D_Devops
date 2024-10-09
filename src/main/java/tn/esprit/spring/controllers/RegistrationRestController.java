@@ -49,4 +49,5 @@ public class RegistrationRestController {
                                                                   @PathVariable("support") Support support) {
         return registrationServices.numWeeksCourseOfInstructorBySupport(numInstructor,support);
     }
+    //test emailing github jenkins
 }
