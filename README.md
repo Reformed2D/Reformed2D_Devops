@@ -1,2 +1,2 @@
 # Reformed2D_Devops
-test
+java 1.8
