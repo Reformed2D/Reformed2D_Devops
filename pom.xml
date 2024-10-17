@@ -58,7 +58,7 @@
 
     <distributionManagement>
         <repository>
-            <id>nexus-id</id>
+            <id>nexus-repo-id</id>
             <name>admin</name>
             <url>http://192.168.56.44:8081/repository/maven-releases/</url>
         </repository>
