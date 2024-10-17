@@ -15,7 +15,7 @@
     <description>tp-foyer</description>
     <properties>
         <java.version>17</java.version>
-            <sonar.login>squ_be012771eb950c0979032cc826545a5e53b7c79c</sonar.login>
+            <sonar.login>squ_20e796cecfe2acc4d750f830d85bd9ff77240562</sonar.login>
              <sonar.java.binaries>target/classes</sonar.java.binaries>
              <sonar.exclusions>**/*Test.java</sonar.exclusions>
     </properties>
