@@ -50,10 +50,15 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.1.0</version>
         </dependency>
-
-
-
     </dependencies>
+
+         <distributionManagement>
+        <repository>
+            <id>nexus-repo-id</id>
+            <name>khawla trabelsi 5SAE5</name>
+            <url>http://192.168.33.10:8081/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
 
     <build>
         <plugins>
