@@ -1,108 +1,84 @@
-pipeline {
-    agent any
-    environment {
-        SONAR_TOKEN = credentials('sonarqube') // Fetch the SonarQube token from Jenkins credentials
-    }
-    
-    stages {
-        
-        stage('Clonage du dépôt') {
-            steps {
-                echo 'Téléchargement...'
-                git branch: 'ahmed', url: 'https://github.com/Reformed2D/Reformed2D_Devops.git', credentialsId: 'github-pat'
-            }
-        }
-        stage('Test Maven') {
-            steps {
-                sh 'mvn -version'
-            }
-        }
-        stage('Test Git') {
-            steps {
-                sh 'git --version'
-            }
-        }
-        stage('Maven Clean and Compile') {
-            steps {
-                // Clean and compile the project to ensure .class files are available
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-        stage('MVN SONARQUBE') {
-            steps {
-                withSonarQubeEnv(installationName: 'SonarQube') {
-                    // Run the SonarQube analysis and provide the compiled classes directory
-                    sh """
-                       mvn sonar:sonar \
-                         -Dsonar.login=${SONAR_TOKEN} \
-                         -Dsonar.java.binaries=target/classes
-                    """
-                }
-            }
-        }
-        stage('Déploiement vers Nexus') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'MAVEN_USERNAME', passwordVariable: 'MAVEN_PASSWORD')]) {
-            sh '''
-                echo "Deploying to Nexus..."
-                mvn deploy -X -Dmaven.test.skip=true -s /usr/share/maven/conf/settings.xml
-            '''
-        }
-    }
-}
-    }
-    post {
-        success {
-            script {
-                // Capture the changed files between the last commit and the current commit
-                def changes = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim()
-                
-                emailext (
-                    subject: "✅ Job build réussi '${env.JOB_NAME} [#${env.BUILD_NUMBER}]'",
-                    body: """
-                        <html>
-                            <body>
-                                <h2 style="color: green;">✅ SUCCÈS : Job '${env.JOB_NAME} [#${env.BUILD_NUMBER}]'</h2>
-                                <p>Le job s'est terminé avec succès.</p>
-                                <h3>Détails :</h3>
-                                <ul>
-                                    <li><strong>Numéro de build :</strong> ${env.BUILD_NUMBER}</li>
-                                    <li><strong>Nom du job :</strong> ${env.JOB_NAME}</li>
-                                    <li><strong>Fichiers modifiés :</strong><pre>${changes}</pre></li>
-                                </ul>
-                            </body>
-                        </html>
-                    """,
-                    mimeType: 'text/html',
-                    to: "ahmed.bdllh2000@gmail.com"
-                )
-            }
-        }
-        failure {
-            script {
-                def changes = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim()
-                
-                emailext (
-                    subject: "❌ Échec de la construction du job '${env.JOB_NAME} [#${env.BUILD_NUMBER}]'",
-                    body: """
-                        <html>
-                            <body>
-                                <h2 style="color: red;">❌ ÉCHEC : Job '${env.JOB_NAME} [#${env.BUILD_NUMBER}]'</h2>
-                                <p>Le job a échoué.</p>
-                                <h3>Détails :</h3>
-                                <ul>
-                                    <li><strong>Nom du job :</strong> ${env.JOB_NAME}</li>
-                                    <li><strong>Numéro de build :</strong> ${env.BUILD_NUMBER}</li>
-                                    <li><strong>Fichiers modifiés :</strong><pre>${changes}</pre></li>
-                                </ul>
-                            </body>
-                        </html>
-                    """,
-                    mimeType: 'text/html',
-                    to: "ahmed.bdllh2000@gmail.com"
-                )
-            }
-        }
-    }
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>tn.esprit</groupId>
+    <artifactId>tp-foyer</artifactId>
+    <version>5.0.0</version>
+    <name>tp-foyer</name>
+    <description>tp-foyer</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+
+
+    </dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus-repo-id</id>
+            <name>admin</name>
+            <url>http://192.168.56.44:8081/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
