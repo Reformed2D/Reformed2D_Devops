@@ -10,7 +10,7 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL5Dialect
     ports:
       - "8089:8089"
-    image: mohamedhadji/tp-foyer:5.0.0
+    image: medhadji/tp-foyer:5.0.0
     restart: unless-stopped
     depends_on:
       - mysqldb
