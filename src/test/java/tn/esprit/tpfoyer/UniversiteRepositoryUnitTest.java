@@ -23,16 +23,25 @@ class UniversiteRepositoryUnitTest {
 
     @BeforeEach
     void setUp() {
+        // Create test data
         universite = new Universite(1, "Esprit");
-        when(universiteRepository.findById(1L))
-                .thenReturn(Optional.of(universite));
+        universite.setNomUniversite("Esprit"); // Explicitly set the name since constructor isn't setting it
+
+        // Setup mock behavior
+        when(universiteRepository.findById(1L)).thenReturn(Optional.of(universite));
     }
 
     @Test
     void testGetUniversiteById() {
+        // When
         Optional<Universite> result = universiteRepository.findById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals("Esprit", result.get().getNomUniv());
+        // Then
+        assertTrue(result.isPresent(), "University should be found");
+        Universite retrievedUniversite = result.get();
+        assertEquals("Esprit", retrievedUniversite.getNomUniv(), "University name should match");
+
+        // Verify the repository method was called
+        verify(universiteRepository).findById(1L);
     }
 }
