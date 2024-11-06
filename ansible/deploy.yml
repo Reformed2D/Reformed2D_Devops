@@ -11,26 +11,27 @@
     mysql_database: tpfoyer
     mysql_user: root
     mysql_password: ""
+    network_name: reformed2d_devops_default
 
   tasks:
-    # Add this new task to create network
-    - name: Create Docker network
-      community.docker.docker_network:
-        name: app-network
-        state: present
+    # First, forcefully remove any existing container
+    - name: Stop and remove existing container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+        force_kill: yes
+      ignore_errors: yes
+
+    # Add a small delay to ensure container is fully removed
+    - name: Wait for container cleanup
+      pause:
+        seconds: 5
 
     - name: Pull Docker image
       community.docker.docker_image:
         name: "{{ docker_image }}"
         source: pull
         force_source: true
-
-    - name: Remove existing container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        state: absent
-        force_kill: yes
-      ignore_errors: yes
 
     - name: Create and start container
       community.docker.docker_container:
@@ -41,11 +42,12 @@
         ports:
           - "8089:8089"
         networks:
-          - name: app-network
+          - name: "{{ network_name }}"
         env:
           SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:{{ mysql_port }}/{{ mysql_database }}?createDatabaseIfNotExist=true"
           SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
           SPRING_DATASOURCE_PASSWORD: ""
+        recreate: yes  # Force recreation of the container
 
     - name: Check container status
       community.docker.docker_container_info:
