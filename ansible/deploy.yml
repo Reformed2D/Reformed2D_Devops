@@ -1,0 +1,48 @@
+---
+- name: Deploy application
+  hosts: localhost
+  become: true
+
+  vars:
+    container_name: tp-foyer-ansible
+    docker_image: medhadji/tp-foyer:5.0.0
+    mysql_host: mysqldb
+    mysql_port: 3306
+    mysql_database: tp-foyer    # Changed to match docker-compose
+    network_name: spring-mysql  # Changed to match docker-compose network name
+    mysql_user: root
+    mysql_password: ""
+
+  tasks:
+    - name: Pull Docker image
+      community.docker.docker_image:
+        name: "{{ docker_image }}"
+        source: pull
+        force_source: true
+
+    - name: Create and start container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "8090:8089"
+        networks:
+          - name: "{{ network_name }}"
+        env:
+          SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:3306/{{ mysql_database }}?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+          SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
+          SPRING_DATASOURCE_PASSWORD: ""
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+          restart_policy: unless-stopped
+
+    - name: Check container status
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: result
+
+    - name: Display container status
+      debug:
+        var: result.container.State
