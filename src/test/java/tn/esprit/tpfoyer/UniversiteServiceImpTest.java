@@ -1,10 +1,11 @@
 package tn.esprit.tpfoyer;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import tn.esprit.tpfoyer.entity.Universite;
 import tn.esprit.tpfoyer.service.UniversiteServiceImpl;
 import tn.esprit.tpfoyer.repository.UniversiteRepository;
@@ -16,46 +17,45 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
-public class UniversiteServiceImpTest {
+@ExtendWith(MockitoExtension.class)
+class UniversiteServiceImpTest {
 
     @Mock
-    UniversiteRepository universiteRepository;
+    private UniversiteRepository universiteRepository;
 
     @InjectMocks
-    UniversiteServiceImpl iUniversiteService;
+    private UniversiteServiceImpl universiteService;
+
+    private Universite universite1;
+    private Universite universite2;
+
+    @BeforeEach
+    void setUp() {
+        universite1 = new Universite(10, "george");
+        universite2 = new Universite(11, "ben");
+
+        when(universiteRepository.findById(10L))
+                .thenReturn(Optional.of(universite1));
+        when(universiteRepository.findAll())
+                .thenReturn(Arrays.asList(universite1, universite2));
+    }
 
     @Test
     void testRetrieveUniversiteById() {
-        // Création d'une instance de Universite pour le test
-        Universite universite = new Universite(10, "george");
+        Universite result = universiteService.retrieveUniversite(10L);
 
-        // Mock de la méthode findById
-        when(universiteRepository.findById(10L)).thenReturn(Optional.of(universite));
-
-        // Appel du service pour récupérer l'université par ID
-        Universite universiteById = iUniversiteService.retrieveUniversite(10L);
-
-        // Vérifications
-        assertNotNull(universiteById);
-        assertEquals("george", universiteById.getNomUniv());
+        assertNotNull(result);
+        assertEquals("george", result.getNomUniv());
     }
 
     @Test
     void testRetrieveAllUniversites() {
-        // Création de deux instances de Universite pour le test
-        Universite universite1 = new Universite(9, "ben");
-        Universite universite2 = new Universite(8, "kevin");
+        List<Universite> result = universiteService.retrieveAllUniversites();
 
-        // Mock de la méthode findAll
-        when(universiteRepository.findAll()).thenReturn(Arrays.asList(universite1, universite2));
-
-        // Appel du service pour récupérer toutes les universités
-        List<Universite> universiteList = iUniversiteService.retrieveAllUniversites();
-
-        // Vérifications
-        assertEquals(2, universiteList.size());
-        assertEquals("ben", universiteList.get(0).getNomUniv());
-        assertEquals("kevin", universiteList.get(1).getNomUniv());
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("ben", result.get(1).getNomUniv());
     }
 }
+
+

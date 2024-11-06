@@ -4,42 +4,35 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import tn.esprit.tpfoyer.entity.Universite;
 import tn.esprit.tpfoyer.repository.UniversiteRepository;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
-public class UniversiteRepositoryUnitTest {
+@ExtendWith(MockitoExtension.class)
+class UniversiteRepositoryUnitTest {
 
     @Mock
-    UniversiteRepository universiteRepository;
+    private UniversiteRepository universiteRepository;
+
+    private Universite universite;
 
     @BeforeEach
     void setUp() {
-        // Initialiser les mocks
-        MockitoAnnotations.openMocks(this);
-
-        // Créer une université à utiliser dans les tests
-        Universite universite = new Universite(1, "Esprit");
-
-        // Définir le comportement du mock pour findById
-        when(universiteRepository.findById(1L)).thenReturn(Optional.of(universite));
+        universite = new Universite(1, "Esprit");
+        when(universiteRepository.findById(1L))
+                .thenReturn(Optional.of(universite));
     }
 
-    @Test // Annoter la méthode avec @Test
+    @Test
     void testGetUniversiteById() {
-        // Appeler la méthode pour récupérer l'université par ID
-        Optional<Universite> retrievedUniversite = universiteRepository.findById(1L);
+        Optional<Universite> result = universiteRepository.findById(1L);
 
-        // Vérifier que l'université est présente et que les valeurs sont correctes
-        assertNotNull(retrievedUniversite);
-        assertEquals("Esprit", retrievedUniversite.get().getNomUniv());
+        assertTrue(result.isPresent());
+        assertEquals("Esprit", result.get().getNomUniv());
     }
 }
