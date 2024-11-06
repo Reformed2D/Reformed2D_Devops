@@ -4,29 +4,16 @@
   become: true
 
   vars:
-    container_name: foyer
+    container_name: tp-foyer-ansible  # Changed container name
     docker_image: omarabidi/tp-foyer:5.0.0
     mysql_host: mysqldb
     mysql_port: 3306
-    mysql_database: foyer
+    mysql_database: tpfoyer
     mysql_user: root
     mysql_password: ""
     network_name: reformed2d_devops_default
 
   tasks:
-    # First, forcefully remove any existing container
-    - name: Stop and remove existing container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        state: absent
-        force_kill: yes
-      ignore_errors: yes
-
-    # Add a small delay to ensure container is fully removed
-    - name: Wait for container cleanup
-      pause:
-        seconds: 5
-
     - name: Pull Docker image
       community.docker.docker_image:
         name: "{{ docker_image }}"
@@ -35,19 +22,18 @@
 
     - name: Create and start container
       community.docker.docker_container:
-        name: "{{ container_name }}"
+        name: "{{ container_name }}"  # Will create tp-foyer-ansible
         image: "{{ docker_image }}"
         state: started
         restart_policy: always
         ports:
-          - "8089:8089"
+          - "8090:8089"  # Changed port to avoid conflict
         networks:
           - name: "{{ network_name }}"
         env:
           SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:{{ mysql_port }}/{{ mysql_database }}?createDatabaseIfNotExist=true"
           SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
           SPRING_DATASOURCE_PASSWORD: ""
-        recreate: yes  # Force recreation of the container
 
     - name: Check container status
       community.docker.docker_container_info:
