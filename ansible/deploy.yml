@@ -4,11 +4,11 @@
   become: true
 
   vars:
-    container_name: app-tp-foyer
+    container_name: foyer
     docker_image: omarabidi/tp-foyer:5.0.0
     mysql_host: mysqldb
     mysql_port: 3306
-    mysql_database: tpfoyer
+    mysql_database: foyer
     mysql_user: root
     mysql_password: ""
     network_name: reformed2d_devops_default
