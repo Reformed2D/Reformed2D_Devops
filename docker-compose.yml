@@ -1,7 +1,7 @@
 services:
   app-tp-foyer:
     build: .
-    container_name: app-tp-foyer
+    container_name: app-tp-foyer-compose
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/tp-foyer?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
@@ -10,7 +10,7 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
     ports:
       - "8089:8089"
-    image: medhadji/tp-foyer:5.0.0
+    image: omarabidi/tp-foyer:5.0.0
     restart: unless-stopped
     depends_on:
       - mysqldb
