@@ -3,15 +3,11 @@ package tn.esprit.tpfoyer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tn.esprit.tpfoyer.entity.Universite;
-import tn.esprit.tpfoyer.service.UniversiteServiceImpl;
 import tn.esprit.tpfoyer.repository.UniversiteRepository;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
