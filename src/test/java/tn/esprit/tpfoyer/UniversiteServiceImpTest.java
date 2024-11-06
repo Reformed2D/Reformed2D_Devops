@@ -37,9 +37,10 @@ class UniversiteServiceImpTest {
         universite2 = new Universite(11, "ben");
         universite2.setNomUniversite("ben");
 
-        when(universiteRepository.findById(10L)).thenReturn(Optional.of(universite1));
-        when(universiteRepository.findAll()).thenReturn(Arrays.asList(universite1, universite2));
-        when(universiteRepository.save(any(Universite.class))).thenReturn(universite1);
+        // Use lenient() to prevent unnecessary stubbing warnings
+        lenient().when(universiteRepository.findById(10L)).thenReturn(Optional.of(universite1));
+        lenient().when(universiteRepository.findAll()).thenReturn(Arrays.asList(universite1, universite2));
+        lenient().when(universiteRepository.save(any(Universite.class))).thenReturn(universite1);
     }
 
     @Test
@@ -53,6 +54,7 @@ class UniversiteServiceImpTest {
 
     @Test
     void testRetrieveUniversiteById_NotFound() {
+        // Stubbing to return Optional.empty for non-existent ID
         when(universiteRepository.findById(999L)).thenReturn(Optional.empty());
 
         Universite result = universiteService.retrieveUniversite(999L);
@@ -74,6 +76,7 @@ class UniversiteServiceImpTest {
 
     @Test
     void testRetrieveAllUniversites_EmptyList() {
+        // Stubbing to return an empty list
         when(universiteRepository.findAll()).thenReturn(Arrays.asList());
 
         List<Universite> result = universiteService.retrieveAllUniversites();
@@ -87,6 +90,8 @@ class UniversiteServiceImpTest {
     void testAddUniversite() {
         Universite newUniversite = new Universite(12, "newUniv");
         newUniversite.setNomUniversite("newUniv");
+
+        // Stubbing to return the new university
         when(universiteRepository.save(any(Universite.class))).thenReturn(newUniversite);
 
         Universite result = universiteService.addUniversite(newUniversite);
@@ -98,6 +103,7 @@ class UniversiteServiceImpTest {
 
     @Test
     void testRemoveUniversite() {
+        // Stubbing deleteById to do nothing when called
         doNothing().when(universiteRepository).deleteById(10L);
 
         universiteService.removeUniversite(10L);
@@ -109,6 +115,8 @@ class UniversiteServiceImpTest {
     void testModifyUniversite() {
         Universite updatedUniversite = new Universite(10, "updatedGeorge");
         updatedUniversite.setNomUniversite("updatedGeorge");
+
+        // Stubbing save method to return updated university
         when(universiteRepository.save(any(Universite.class))).thenReturn(updatedUniversite);
 
         Universite result = universiteService.modifyUniversite(updatedUniversite);
@@ -122,10 +130,12 @@ class UniversiteServiceImpTest {
     void testModifyUniversite_WithNullInput() {
         Universite nullUniversite = null;
 
+        // Assert that an exception is thrown when trying to modify with null input
         assertThrows(IllegalArgumentException.class, () -> {
             universiteService.modifyUniversite(nullUniversite);
         }, "Should throw IllegalArgumentException for null input");
 
+        // Verify that save was never called
         verify(universiteRepository, never()).save(any());
     }
 }
