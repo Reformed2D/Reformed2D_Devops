@@ -71,6 +71,13 @@
         </dependency>
 
     </dependencies>
+    <distributionManagement>
+        <repository>
+            <id>nexus-repo-id</id>
+            <name>Bassem Mahjoub 5SAE5</name>
+            <url>http://192.168.56.44:8081//repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
 
     <build>
         <plugins>
