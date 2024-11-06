@@ -23,10 +23,11 @@ class UniversiteRepositoryUnitTest {
 
     @BeforeEach
     void setUp() {
-        // Create test data
+        // Fix 3: Properly initialize the university object
         universite = new Universite(1, "Esprit");
+        universite.setNomUniversite("Esprit"); // Explicitly set the name
 
-        // Set mock behavior
+        // Set up mock behavior
         when(universiteRepository.findById(1L)).thenReturn(Optional.of(universite));
     }
 
@@ -40,7 +41,7 @@ class UniversiteRepositoryUnitTest {
         Universite retrievedUniversite = result.get();
         assertEquals("Esprit", retrievedUniversite.getNomUniversite(), "University name should match");
 
-        // Verify interaction with the repository
+        // Verify interaction
         verify(universiteRepository).findById(1L);
     }
 }
