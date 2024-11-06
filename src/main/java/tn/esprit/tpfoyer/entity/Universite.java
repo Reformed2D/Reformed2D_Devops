@@ -24,6 +24,13 @@ public class Universite {
     @OneToOne(cascade = CascadeType.ALL)
     Foyer foyer;
 
+    public Universite(int i, String esprit) {
+    }
+
+    public String getNomUniv() {
+        return nomUniversite;
+    }
+
 }
 
 
