@@ -1,7 +1,7 @@
 services:
   app-tp-foyer:
     build: .
-    container_name: app-tp-foyer-compose
+    container_name: app-tp-foyer
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/tp-foyer?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
