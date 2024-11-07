@@ -1,48 +1,36 @@
 ---
-- name: Deploy application
-  hosts: localhost
-  become: true
-
-  vars:
-    container_name: tp-foyer-ansible
-    docker_image: omarabidi/tp-foyer:5.0.0
-    mysql_host: mysqldb
-    mysql_port: 3306
-    mysql_database: tp-foyer    # Changed to match docker-compose
-    network_name: spring-mysql  # Changed to match docker-compose network name
-    mysql_user: root
-    mysql_password: ""
-
+- name: Deploy TP Foyer
+  hosts: docker_hosts
   tasks:
-    - name: Pull Docker image
-      community.docker.docker_image:
-        name: "{{ docker_image }}"
-        source: pull
-        force_source: true
+    - name: Remove old containers
+      shell: |
+        docker rm -f objective_gagarin zen_shockley wizardly_lamport confident_leakey ecstatic_cray k3s-server || true
+        
+    - name: Ensure TP Foyer is running
+      shell: |
+        # Check if containers exist and recreate if needed
+        if ! docker ps -q -f name=mysqldb; then
+          docker run -d \
+            --name mysqldb \
+            --network spring-mysql \
+            -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
+            -e MYSQL_DATABASE=tp-foyer \
+            -p 3306:3306 \
+            mysql:5.7
+        fi
+        
+        if ! docker ps -q -f name=app-tp-foyer; then
+          docker run -d \
+            --name app-tp-foyer \
+            --network spring-mysql \
+            -p 8089:8089 \
+            medhadji/tp-foyer:5.0.0
+        fi
 
-    - name: Create and start container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ docker_image }}"
-        state: started
-        restart_policy: always
-        ports:
-          - "8090:8089"
-        networks:
-          - name: "{{ network_name }}"
-        env:
-          SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:3306/{{ mysql_database }}?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
-          SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
-          SPRING_DATASOURCE_PASSWORD: ""
-          SPRING_JPA_HIBERNATE_DDL_AUTO: update
-          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
-          restart_policy: unless-stopped
+    - name: Show running containers
+      shell: docker ps
+      register: container_status
 
-    - name: Check container status
-      community.docker.docker_container_info:
-        name: "{{ container_name }}"
-      register: result
-
-    - name: Display container status
+    - name: Display status
       debug:
-        var: result.container.State
+        var: container_status.stdout_lines
