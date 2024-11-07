@@ -1,94 +1,49 @@
 ---
 - name: Deploy application
-  hosts: local
-  become: yes
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    container_name: tp-foyer-ansible
+    docker_image: medhadji/tp-foyer:5.0.0
+    mysql_host: mysqldb
+    mysql_port: 3306
+    mysql_database: tp-foyer
+    network_name: spring-mysql
+    mysql_user: root
+    mysql_password: ""
+
   tasks:
-    - name: Remove old Ansible containers
-      docker_container:
-        name: "{{ item }}"
-        state: absent
-      with_items:
-        - confident_leakey
-        - ecstatic_cray
-
-    - name: Create Docker network
-      docker_network:
-        name: spring-mysql
-        state: present
-        driver: bridge
-
-    - name: Pull required images
-      docker_image:
-        name: "{{ item }}"
+    - name: Pull Docker image
+      community.docker.docker_image:
+        name: "{{ docker_image }}"
         source: pull
-      with_items:
-        - mysql:5.7
-        - medhadji/tp-foyer:5.0.0
+        force_source: true
 
-    - name: Stop and remove existing containers if they exist
-      docker_container:
-        name: "{{ item }}"
-        state: absent
-      with_items:
-        - app-tp-foyer
-        - mysqldb
-      ignore_errors: yes
-
-    - name: Create and start MySQL container
-      docker_container:
-        name: mysqldb
-        image: mysql:5.7
+    - name: Create and start container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}"
         state: started
-        restart_policy: unless-stopped
-        networks:
-          - name: spring-mysql
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-          MYSQL_DATABASE: "tp-foyer"
+        restart_policy: always
         ports:
-          - "3306:3306"
-        volumes:
-          - db:/var/lib/mysql
-        healthcheck:
-          test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
-
-    - name: Wait for MySQL to be ready
-      wait_for:
-        host: localhost
-        port: 3306
-        timeout: 30
-        state: started
-
-    - name: Create and start Spring Boot container
-      docker_container:
-        name: app-tp-foyer
-        image: medhadji/tp-foyer:5.0.0
-        state: started
-        restart_policy: unless-stopped
+          - "8090:8089"
         networks:
-          - name: spring-mysql
+          - name: "{{ network_name }}"
         env:
-          SPRING_DATASOURCE_URL: "jdbc:mysql://mysqldb:3306/tp-foyer?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
-          SPRING_DATASOURCE_USERNAME: "root"
+          SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:{{ mysql_port }}/{{ mysql_database }}?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+          SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
           SPRING_DATASOURCE_PASSWORD: ""
-          SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
-          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.MySQLDialect"
-        ports:
-          - "8089:8089"
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+          restart_policy: unless-stopped
 
-    - name: Clean up old Ansible images
-      docker_image:
-        state: absent
-        name: willhallonline/ansible
-        tag: latest
-
-    - name: Show running containers
-      shell: docker ps
-      register: docker_ps
+    - name: Check container status
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: result
 
     - name: Display container status
       debug:
-        var: docker_ps.stdout_lines
+        var: result.container.State
