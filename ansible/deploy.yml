@@ -3,19 +3,36 @@
   hosts: local
   become: yes
   tasks:
+    - name: Remove old Ansible containers
+      docker_container:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - confident_leakey
+        - ecstatic_cray
+
     - name: Create Docker network
       docker_network:
         name: spring-mysql
         state: present
         driver: bridge
 
-    - name: Pull Docker image
+    - name: Pull required images
       docker_image:
         name: "{{ item }}"
         source: pull
       with_items:
         - mysql:5.7
         - medhadji/tp-foyer:5.0.0
+
+    - name: Stop and remove existing containers if they exist
+      docker_container:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - app-tp-foyer
+        - mysqldb
+      ignore_errors: yes
 
     - name: Create and start MySQL container
       docker_container:
@@ -61,13 +78,17 @@
           SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.MySQLDialect"
         ports:
           - "8089:8089"
-        depends_on:
-          - mysqldb
 
-    - name: Check running containers
+    - name: Clean up old Ansible images
+      docker_image:
+        state: absent
+        name: willhallonline/ansible
+        tag: latest
+
+    - name: Show running containers
       shell: docker ps
-      register: container_status
+      register: docker_ps
 
-    - name: Show containers status
+    - name: Display container status
       debug:
-        var: container_status.stdout_lines
+        var: docker_ps.stdout_lines
