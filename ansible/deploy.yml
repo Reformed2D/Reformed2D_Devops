@@ -1,48 +1,73 @@
 ---
 - name: Deploy application
-  hosts: localhost
-  become: true
-
-  vars:
-    container_name: tp-foyer-ansible
-    docker_image: medhadji/tp-foyer:5.0.0
-    mysql_host: mysqldb
-    mysql_port: 3306
-    mysql_database: tp-foyer    # Changed to match docker-compose
-    network_name: spring-mysql  # Changed to match docker-compose network name
-    mysql_user: root
-    mysql_password: ""
-
+  hosts: local
+  become: yes
   tasks:
+    - name: Create Docker network
+      docker_network:
+        name: spring-mysql
+        state: present
+        driver: bridge
+
     - name: Pull Docker image
-      community.docker.docker_image:
-        name: "{{ docker_image }}"
+      docker_image:
+        name: "{{ item }}"
         source: pull
-        force_source: true
+      with_items:
+        - mysql:5.7
+        - medhadji/tp-foyer:5.0.0
 
-    - name: Create and start container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ docker_image }}"
+    - name: Create and start MySQL container
+      docker_container:
+        name: mysqldb
+        image: mysql:5.7
         state: started
-        restart_policy: always
-        ports:
-          - "8090:8089"
+        restart_policy: unless-stopped
         networks:
-          - name: "{{ network_name }}"
+          - name: spring-mysql
         env:
-          SPRING_DATASOURCE_URL: "jdbc:mysql://{{ mysql_host }}:3306/{{ mysql_database }}?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
-          SPRING_DATASOURCE_USERNAME: "{{ mysql_user }}"
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: "tp-foyer"
+        ports:
+          - "3306:3306"
+        volumes:
+          - db:/var/lib/mysql
+        healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+
+    - name: Wait for MySQL to be ready
+      wait_for:
+        host: localhost
+        port: 3306
+        timeout: 30
+        state: started
+
+    - name: Create and start Spring Boot container
+      docker_container:
+        name: app-tp-foyer
+        image: medhadji/tp-foyer:5.0.0
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: spring-mysql
+        env:
+          SPRING_DATASOURCE_URL: "jdbc:mysql://mysqldb:3306/tp-foyer?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+          SPRING_DATASOURCE_USERNAME: "root"
           SPRING_DATASOURCE_PASSWORD: ""
-          SPRING_JPA_HIBERNATE_DDL_AUTO: update
-          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
-          restart_policy: unless-stopped
+          SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.MySQLDialect"
+        ports:
+          - "8089:8089"
+        depends_on:
+          - mysqldb
 
-    - name: Check container status
-      community.docker.docker_container_info:
-        name: "{{ container_name }}"
-      register: result
+    - name: Check running containers
+      shell: docker ps
+      register: container_status
 
-    - name: Display container status
+    - name: Show containers status
       debug:
-        var: result.container.State
+        var: container_status.stdout_lines
